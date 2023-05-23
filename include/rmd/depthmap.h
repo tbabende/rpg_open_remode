@@ -102,6 +102,8 @@ public:
   size_t getHeight() const
   { return height_; }
 
+  void inputImageRGB(const cv::Mat &rgb_img_8uc3);
+
 private:
   void inputImage(const cv::Mat &img_8uc1);
 
@@ -114,6 +116,8 @@ private:
   cv::Mat undist_map1_, undist_map2_;
   cv::Mat img_undistorted_32fc1_;
   cv::Mat img_undistorted_8uc1_;
+
+  cv::Mat rgb_img_8uc3_;
 
   cv::Mat ref_img_undistorted_8uc1_;
   SE3<float> T_world_ref_;

@@ -28,6 +28,7 @@ rmd::Publisher::Publisher(ros::NodeHandle &nh,
                           std::shared_ptr<rmd::Depthmap> depthmap)
   : nh_(nh)
   , pc_(new PointCloud)
+  , pc_rgb_(new PointCloudRGB)
 {
   depthmap_ = depthmap;
   colored_.create(depthmap->getHeight(), depthmap_->getWidth(), CV_8UC3);
@@ -35,6 +36,7 @@ rmd::Publisher::Publisher(ros::NodeHandle &nh,
   depthmap_publisher_ = it.advertise("remode/depth",       10);
   conv_publisher_     = it.advertise("remode/convergence", 10);
   pub_pc_ = nh_.advertise<PointCloud>("remode/pointcloud", 1);
+  pub_pc_rgb_ = nh_.advertise<PointCloudRGB>("remode/rgb_pointcloud", 1);
 }
 
 void rmd::Publisher::publishDepthmap() const
@@ -95,10 +97,67 @@ void rmd::Publisher::publishPointCloud() const
 #else
       timestamp = ros::Time::now();
 #endif
-      pc_->header.frame_id = "/world";
+      pc_->header.frame_id = "world";
       pc_->header.stamp = timestamp;
       pub_pc_.publish(pc_);
       std::cout << "INFO: publishing pointcloud, " << pc_->size() << " points" << std::endl;
+    }
+  }
+}
+
+void rmd::Publisher::publishPointCloudRGB() const
+{
+  {
+    std::lock_guard<std::mutex> lock(depthmap_->getRefImgMutex());
+
+    const cv::Mat depth = depthmap_->getDepthmap();
+    const cv::Mat convergence = depthmap_->getConvergenceMap();
+    const cv::Mat ref_img = depthmap_->getReferenceImageRGB();
+    const rmd::SE3<float> T_world_ref = depthmap_->getT_world_ref();
+
+    const float fx = depthmap_->getFx();
+    const float fy = depthmap_->getFy();
+    const float cx = depthmap_->getCx();
+    const float cy = depthmap_->getCy();
+    // pc_rgb_->clear();
+
+    for(int y=0; y<depth.rows; ++y)
+    {
+      for(int x=0; x<depth.cols; ++x)
+      {
+        const float3 f = normalize( make_float3((x-cx)/fx, (y-cy)/fy, 1.0f) );
+        const float3 xyz = T_world_ref * ( f * depth.at<float>(y, x) );
+
+        if( rmd::ConvergenceState::CONVERGED == convergence.at<int>(y, x))
+        {
+          PointTypeRGB p;
+          p.x = xyz.x;
+          p.y = xyz.y;
+          p.z = xyz.z;
+
+          // Get the color information
+          uint32_t rgb = ((uint32_t)ref_img.at<cv::Vec3b>(y, x)[2] << 16 | (uint32_t)ref_img.at<cv::Vec3b>(y, x)[1] << 8 | (uint32_t)ref_img.at<cv::Vec3b>(y, x)[0]);
+          p.rgb = *reinterpret_cast<float*>(&rgb);
+          pc_rgb_->push_back(p);
+        }
+      }
+    }
+
+  }
+  if (!pc_rgb_->empty())
+  {
+    if(nh_.ok())
+    {
+      uint64_t timestamp;
+#if PCL_MAJOR_VERSION == 1 && PCL_MINOR_VERSION >= 7
+      pcl_conversions::toPCL(ros::Time::now(), timestamp);
+#else
+      timestamp = ros::Time::now();
+#endif
+      pc_rgb_->header.frame_id = "world";
+      pc_rgb_->header.stamp = timestamp;
+      pub_pc_rgb_.publish(pc_rgb_);
+      std::cout << "INFO: publishing pointcloud, " << pc_rgb_->size() << " points" << std::endl;
     }
   }
 }
@@ -107,6 +166,7 @@ void rmd::Publisher::publishDepthmapAndPointCloud() const
 {
   publishDepthmap();
   publishPointCloud();
+  publishPointCloudRGB();
 }
 
 void rmd::Publisher::publishConvergenceMap()
