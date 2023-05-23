@@ -132,7 +132,7 @@ bool rmd::test::Dataset::readImage(cv::Mat &img, const char *file_name) const
 {
   const boost::filesystem::path dataset_path(dataset_path_);
   const auto img_file_path = dataset_path / "images" / file_name;
-  img = cv::imread(img_file_path.string(), CV_LOAD_IMAGE_GRAYSCALE);
+  img = cv::imread(img_file_path.string(), cv::IMREAD_GRAYSCALE);
   if(img.data == NULL)
     return false;
   else

@@ -21,6 +21,7 @@
 #include <memory>
 #include <Eigen/Eigen>
 #include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/calib3d.hpp>
 
 #include <rmd/seed_matrix.cuh>
 #include <rmd/depthmap_denoiser.cuh>

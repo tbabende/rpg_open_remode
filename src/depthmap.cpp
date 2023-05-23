@@ -96,7 +96,7 @@ void rmd::Depthmap::inputImage(const cv::Mat &img_8uc1)
 {
   if(is_distorted_)
   {
-    cv::remap(img_8uc1, img_undistorted_8uc1_, undist_map1_, undist_map2_, CV_INTER_LINEAR);
+    cv::remap(img_8uc1, img_undistorted_8uc1_, undist_map1_, undist_map2_, cv::INTER_LINEAR);
   }
   else
   {
@@ -164,7 +164,7 @@ cv::Mat rmd::Depthmap::scaleMat(const cv::Mat &depthmap)
   scaled_depthmap = (scaled_depthmap - min_val) * 1.0 / (max_val - min_val);
   scaled_depthmap.convertTo(converted, CV_8UC1, 255);
   cv::Mat colored(converted.rows, converted.cols, CV_8UC3);
-  cv::cvtColor(converted, colored, CV_GRAY2BGR);
+  cv::cvtColor(converted, colored, cv::COLOR_GRAY2BGR);
   return colored;
 }
 
