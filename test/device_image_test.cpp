@@ -79,8 +79,8 @@ TEST(RMDCuTests, deviceImageUploadDownloadFloat2)
 
   // Opencv gradient computation
   cv::Mat ocv_grad_x, ocv_grad_y;
-  cv::Sobel(img_flt, ocv_grad_x, CV_32F, 1, 0, CV_SCHARR);
-  cv::Sobel(img_flt, ocv_grad_y, CV_32F, 0, 1, CV_SCHARR);
+  cv::Sobel(img_flt, ocv_grad_x, CV_32F, 1, 0, cv::BORDER_DEFAULT);
+  cv::Sobel(img_flt, ocv_grad_y, CV_32F, 0, 1, cv::BORDER_DEFAULT);
 
   const size_t w = img_flt.cols;
   const size_t h = img_flt.rows;
@@ -180,8 +180,8 @@ TEST(RMDCuTests, deviceImageSobelTest)
   cv::Mat ocv_grad_x(h, w, CV_32FC1);
   cv::Mat ocv_grad_y(h, w, CV_32FC1);
   double t = (double)cv::getTickCount();
-  cv::Sobel(img_flt, ocv_grad_x, CV_32F, 1, 0, CV_SCHARR);
-  cv::Sobel(img_flt, ocv_grad_y, CV_32F, 0, 1, CV_SCHARR);
+  cv::Sobel(img_flt, ocv_grad_x, CV_32F, 1, 0, cv::BORDER_DEFAULT);
+  cv::Sobel(img_flt, ocv_grad_y, CV_32F, 0, 1, cv::BORDER_DEFAULT);
   t = ((double)cv::getTickCount() - t)/cv::getTickFrequency();
   printf("Opencv execution time: %f seconds.\n", t);
 
@@ -244,8 +244,8 @@ TEST(RMDCuTests, deviceImageSobelTexTest)
   cv::Mat ocv_grad_x(h, w, CV_32FC1);
   cv::Mat ocv_grad_y(h, w, CV_32FC1);
   double t = (double)cv::getTickCount();
-  cv::Sobel(img_flt, ocv_grad_x, CV_32F, 1, 0, CV_SCHARR);
-  cv::Sobel(img_flt, ocv_grad_y, CV_32F, 0, 1, CV_SCHARR);
+  cv::Sobel(img_flt, ocv_grad_x, CV_32F, 1, 0, cv::BORDER_DEFAULT);
+  cv::Sobel(img_flt, ocv_grad_y, CV_32F, 0, 1, cv::BORDER_DEFAULT);
   t = ((double)cv::getTickCount() - t)/cv::getTickFrequency();
   printf("Opencv execution time: %f seconds.\n", t);
 
