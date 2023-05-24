@@ -49,7 +49,7 @@ void rmd::Publisher::publishDepthmap() const
   {
     cv_image.header.stamp = ros::Time::now();
     depthmap_publisher_.publish(cv_image.toImageMsg());
-    std::cout << "INFO: publishing depth map" << std::endl;
+    // std::cout << "INFO: publishing depth map" << std::endl;
   }
 }
 
@@ -100,11 +100,13 @@ void rmd::Publisher::publishPointCloud() const
       pc_->header.frame_id = "world";
       pc_->header.stamp = timestamp;
       pub_pc_.publish(pc_);
-      std::cout << "INFO: publishing pointcloud, " << pc_->size() << " points" << std::endl;
+      // std::cout << "INFO: publishing pointcloud, " << pc_->size() << " points" << std::endl;
     }
   }
 }
 
+
+// add mask as arg or use private member var via getReferenceMask
 void rmd::Publisher::publishPointCloudRGB() const
 {
   {
@@ -114,6 +116,8 @@ void rmd::Publisher::publishPointCloudRGB() const
     const cv::Mat convergence = depthmap_->getConvergenceMap();
     const cv::Mat ref_img = depthmap_->getReferenceImageRGB();
     const rmd::SE3<float> T_world_ref = depthmap_->getT_world_ref();
+
+    const cv::Mat ref_mask = depthmap_->getReferenceMask();
 
     const float fx = depthmap_->getFx();
     const float fy = depthmap_->getFy();
@@ -128,7 +132,15 @@ void rmd::Publisher::publishPointCloudRGB() const
         const float3 f = normalize( make_float3((x-cx)/fx, (y-cy)/fy, 1.0f) );
         const float3 xyz = T_world_ref * ( f * depth.at<float>(y, x) );
 
-        if( rmd::ConvergenceState::CONVERGED == convergence.at<int>(y, x))
+        // get in the flag that it shouldnt reconstruct this point
+        // get mask, then look at (x, y),  then check if 1 or 0, then add condition
+        // ref_mask.convertTo(ref_mask, CV_8UC1); 
+        // ROS_INFO_STREAM(ref_mask.type());
+        // ROS_INFO_STREAM((uchar)ref_mask.at<cv::Vec3b>(y, x)[0]);
+        // ROS_INFO_STREAM((int)ref_mask.at<uchar>(y, x));
+        // ROS_INFO_STREAM(ref_mask.at<uchar>(y, x));
+        if(rmd::ConvergenceState::CONVERGED == convergence.at<int>(y, x) && (int)ref_mask.at<uchar>(y, x) == 1)
+        // if( rmd::ConvergenceState::CONVERGED == convergence.at<int>(y, x))
         {
           PointTypeRGB p;
           p.x = xyz.x;
@@ -136,6 +148,8 @@ void rmd::Publisher::publishPointCloudRGB() const
           p.z = xyz.z;
 
           // Get the color information
+          // TODO: in here if clause for mask compare, same location
+          // if (ref_mask.at<cv::) ?? which type??
           uint32_t rgb = ((uint32_t)ref_img.at<cv::Vec3b>(y, x)[2] << 16 | (uint32_t)ref_img.at<cv::Vec3b>(y, x)[1] << 8 | (uint32_t)ref_img.at<cv::Vec3b>(y, x)[0]);
           p.rgb = *reinterpret_cast<float*>(&rgb);
           pc_rgb_->push_back(p);
@@ -157,11 +171,12 @@ void rmd::Publisher::publishPointCloudRGB() const
       pc_rgb_->header.frame_id = "world";
       pc_rgb_->header.stamp = timestamp;
       pub_pc_rgb_.publish(pc_rgb_);
-      std::cout << "INFO: publishing pointcloud, " << pc_rgb_->size() << " points" << std::endl;
+      // std::cout << "INFO: publishing pointcloud, " << pc_rgb_->size() << " points" << std::endl;
     }
   }
 }
 
+// add mask as arg, optional
 void rmd::Publisher::publishDepthmapAndPointCloud() const
 {
   publishDepthmap();
@@ -202,6 +217,6 @@ void rmd::Publisher::publishConvergenceMap()
   {
     cv_image.header.stamp = ros::Time::now();
     conv_publisher_.publish(cv_image.toImageMsg());
-    std::cout << "INFO: publishing convergence map" << std::endl;
+    // std::cout << "INFO: publishing convergence map" << std::endl;
   }
 }

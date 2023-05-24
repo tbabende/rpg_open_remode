@@ -96,6 +96,7 @@ void rmd::DepthmapNode::denseInputCallback(
   }
   cv::Mat img_8uC1;
   cv::Mat rgb_img_8uC3;
+  cv::Mat mask_8uc1;
   try
   {
     cv_bridge::CvImageConstPtr cv_img_ptr =
@@ -109,6 +110,12 @@ void rmd::DepthmapNode::denseInputCallback(
                           dense_input,
                           sensor_msgs::image_encodings::BGR8);
     rgb_img_8uC3 = cv_img_ptr_rgb->image;
+
+    cv_bridge::CvImageConstPtr cv_mask_ptr =
+    cv_bridge::toCvShare(dense_input->mask,
+                          dense_input,
+                          sensor_msgs::image_encodings::MONO8);
+    mask_8uc1 = cv_mask_ptr->image;
   }
   catch (cv_bridge::Exception& e)
   {
@@ -123,11 +130,11 @@ void rmd::DepthmapNode::denseInputCallback(
         dense_input->pose.position.y,
         dense_input->pose.position.z);
 
-  std::cout << "DEPTHMAP NODE: received image "
-            << img_8uC1.cols << "x" << img_8uC1.rows
-            <<  std::endl;
-  std::cout << "T_world_curr:" << std::endl;
-  std::cout << T_world_curr << std::endl;
+  // std::cout << "DEPTHMAP NODE: received image "
+  //           << img_8uC1.cols << "x" << img_8uC1.rows
+  //           <<  std::endl;
+  // std::cout << "T_world_curr:" << std::endl;
+  // std::cout << T_world_curr << std::endl;
 
   switch (state_) {
   case rmd::State::TAKE_REFERENCE_FRAME:
@@ -138,6 +145,8 @@ void rmd::DepthmapNode::denseInputCallback(
          dense_input->min_depth,
          dense_input->max_depth))
     {
+      depthmap_->inputImageRGB(rgb_img_8uC3);
+      depthmap_->inputMask(mask_8uc1);
       state_ = State::UPDATE;
     }
     else
@@ -151,10 +160,11 @@ void rmd::DepthmapNode::denseInputCallback(
     depthmap_->update(img_8uC1, T_world_curr.inv());
     const float perc_conv = depthmap_->getConvergedPercentage();
     const float dist_from_ref = depthmap_->getDistFromRef();
-    std::cout << "INFO: percentage of converged measurements: " << perc_conv << "%" << std::endl;
+    // std::cout << "INFO: percentage of converged measurements: " << perc_conv << "%" << std::endl;
     if(perc_conv > ref_compl_perc_ || dist_from_ref > max_dist_from_ref_)
     {
       state_ = State::TAKE_REFERENCE_FRAME;
+      // add mask as arg
       denoiseAndPublishResults();
     }
     break;
@@ -169,6 +179,7 @@ void rmd::DepthmapNode::denseInputCallback(
   }
 }
 
+// gets called in callback
 void rmd::DepthmapNode::denoiseAndPublishResults()
 {
   depthmap_->downloadDenoisedDepthmap(0.5f, 200);

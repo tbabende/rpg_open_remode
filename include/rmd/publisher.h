@@ -36,7 +36,7 @@ class Publisher
   typedef pcl::PointCloud<PointType> PointCloud;
 
   typedef pcl::PointXYZRGB PointTypeRGB;
-  typedef pcl::PointCloud<PointTypeRGB> PointCloudRGB; 
+  typedef pcl::PointCloud<PointTypeRGB> PointCloudRGB;  
 
 public:
 
@@ -61,9 +61,9 @@ private:
   image_transport::Publisher conv_publisher_;
 
   PointCloud::Ptr pc_;
-  ros::Publisher pub_pc_;
-
   PointCloudRGB::Ptr pc_rgb_;
+
+  ros::Publisher pub_pc_;
   ros::Publisher pub_pc_rgb_;
 
   cv::Mat colored_;
