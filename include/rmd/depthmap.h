@@ -68,6 +68,7 @@ public:
 
 
   const cv::Mat getReferenceImage() const;
+  const cv::Mat getReferenceImageRGB() const;
 
   size_t getConvergedCount() const;
   float  getConvergedPercentage() const;
